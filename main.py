@@ -13,7 +13,7 @@ def long_polling(token):
     }
 
     params = {
-        "timestamp": "",
+        'timestamp': '',
     }
     while True:
         response = requests.get(url, headers=headers, timeout=95, params=params)
@@ -21,10 +21,10 @@ def long_polling(token):
         information_about_checks = response.json()
 
         if information_about_checks['status'] == 'timeout':
-            params["timestamp"] = information_about_checks['timestamp_to_request']
+            params['timestamp'] = information_about_checks['timestamp_to_request']
 
         if information_about_checks['status'] == 'found':
-            params["timestamp"] = information_about_checks['new_attempts'][0]['timestamp']
+            params['timestamp'] = information_about_checks['new_attempts'][0]['timestamp']
             lesson_title = information_about_checks['new_attempts'][0]['lesson_title']
             is_negative = information_about_checks['new_attempts'][0]['is_negative']
             lesson_url = information_about_checks['new_attempts'][0]['lesson_url']
@@ -63,10 +63,10 @@ def main():
 
 
         except requests.exceptions.ReadTimeout:
-            print("сервер не  ответил ")
+            print('сервер не  ответил ')
 
         except requests.exceptions.ConnectionError:
-            print("нету подключения к инетрнету")
+            print('нету подключения к инетрнету')
 
 
 if __name__ == '__main__':
