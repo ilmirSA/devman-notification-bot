@@ -16,7 +16,7 @@ def long_polling(token):
         "timestamp": "",
     }
     while True:
-        response = requests.get(url, headers=headers, timeout=5, params=params)
+        response = requests.get(url, headers=headers, timeout=95, params=params)
         response.raise_for_status()
         information_about_checks = response.json()
 
