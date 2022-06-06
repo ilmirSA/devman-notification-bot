@@ -1,6 +1,5 @@
 import asyncio
 import os
-import time
 
 import requests
 import telegram
@@ -12,80 +11,62 @@ def long_polling(token):
     headers = {
         'Authorization': token,
     }
+
+    params = {
+        "timestamp": "",
+    }
     while True:
-        response = requests.get(url, headers=headers, timeout=91)
+        response = requests.get(url, headers=headers, timeout=5, params=params)
         response.raise_for_status()
-        decode_response = response.json()
+        information_about_checks = response.json()
 
-        if decode_response['status'] == 'timeout':
-            params = {
-                'timestamp': decode_response['timestamp_to_request']
-            }
-            response = requests.get(url, headers=headers, params=params)
-            response.raise_for_status()
-            decode_response = response.json()
-            if decode_response['status'] == 'found':
-                lesson_title = decode_response['new_attempts'][0]['lesson_title']
-                is_negative = decode_response['new_attempts'][0]['is_negative']
-                lesson_url = decode_response['new_attempts'][0]['lesson_url']
-                return lesson_title, is_negative, lesson_url
+        if information_about_checks['status'] == 'timeout':
+            params["timestamp"] = information_about_checks['timestamp_to_request']
 
-        else:
-            lesson_title = decode_response['new_attempts'][0]['lesson_title']
-            is_negative = decode_response['new_attempts'][0]['is_negative']
-            lesson_url = decode_response['new_attempts'][0]['lesson_url']
+        if information_about_checks['status'] == 'found':
+            params["timestamp"] = information_about_checks['new_attempts'][0]['timestamp']
+            lesson_title = information_about_checks['new_attempts'][0]['lesson_title']
+            is_negative = information_about_checks['new_attempts'][0]['is_negative']
+            lesson_url = information_about_checks['new_attempts'][0]['lesson_url']
             return lesson_title, is_negative, lesson_url
 
 
-async def bot(TG_TOKEN, TG_CHAT_ID, lesson_title, is_negative, lesson_url):
+async def telegram_send_message(TG_TOKEN, TG_CHAT_ID, lesson_title, is_negative, lesson_url):
     bot = telegram.Bot(TG_TOKEN)
-    if is_negative:
-        async with bot:
-            await bot.send_message(
-                text=f'Преподаватель проверил работу!!  \"{lesson_title}\"  {lesson_url} К сожалению, в работе нашлись ошибки.',
-                chat_id=TG_CHAT_ID
-            )
-    if not is_negative:
-        async with bot:
-            await bot.send_message(
-                text=f'Преподаватель проверил работу!!  \"{lesson_title}\"  {lesson_url} Преподавателю все понравилосб, можно приступать к следущему уроку!',
-                chat_id=TG_CHAT_ID
-            )
+
+    text = f'Преподаватель проверил работу!!  \"{lesson_title}\"  {lesson_url} К сожалению, в работе нашлись ошибки.' if is_negative else f'Преподаватель проверил работу!!  \"{lesson_title}\"  {lesson_url} Преподавателю все понравилось, можно приступать к следущему уроку!'
+
+    async with bot:
+        await bot.send_message(
+            text=text,
+            chat_id=TG_CHAT_ID
+        )
 
 
 def main():
     load_dotenv()
     devman_token = os.getenv('DEVMAN_TOKEN')
-    TG_TOKEN = os.getenv('TG_TOKEN')
-    TG_CHAT_ID = os.getenv('TG_CHAT_ID')
+    tg_token = os.getenv('TG_TOKEN')
+    tg_chat_id = os.getenv('TG_CHAT_ID')
 
-    try:
-        lesson_title, is_negative, lesson_url = long_polling(devman_token)
+    while True:
+        try:
+            lesson_title, is_negative, lesson_url = long_polling(devman_token)
+            if lesson_title and is_negative and lesson_url:
+                asyncio.run(telegram_send_message(
+                    tg_token,
+                    tg_chat_id,
+                    lesson_title,
+                    is_negative,
+                    lesson_url
+                ))
 
-        if lesson_title and is_negative and lesson_url:
-            asyncio.run(bot(
-                TG_TOKEN,
-                TG_CHAT_ID,
-                lesson_title,
-                is_negative,
-                lesson_url
-            ))
-            main()
 
-    except requests.exceptions.ReadTimeout:
-        main()
+        except requests.exceptions.ReadTimeout:
+            print("сервер не  ответил ")
 
-    except requests.exceptions.ConnectionError:
-        while True:
-            try:
-                response = requests.get('https://dvmn.org/').status_code
-                if response == 200:
-                    print('Интернет есть')
-                    main()
-            except requests.exceptions.ConnectionError:
-                print('Интернета нету')
-                sleep_seconds = 1
-                time.sleep(sleep_seconds)
+        except requests.exceptions.ConnectionError:
+            print("нету подключения к инетрнету")
 
 
 if __name__ == '__main__':
