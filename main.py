@@ -17,24 +17,35 @@ def long_polling(token):
         'timestamp': '',
     }
     while True:
-        response = requests.get(url, headers=headers, timeout=95, params=params)
-        response.raise_for_status()
-        checks_information = response.json()
+        try:
+            response = requests.get(url, headers=headers, timeout=95, params=params)
+            response.raise_for_status()
+            checks_information = response.json()
 
-        if checks_information['status'] == 'timeout':
-            params['timestamp'] = checks_information['timestamp_to_request']
+            if checks_information['status'] == 'timeout':
+                params['timestamp'] = checks_information['timestamp_to_request']
 
-        if checks_information['status'] == 'found':
-            params['timestamp'] = checks_information['new_attempts'][0]['timestamp']
+            if checks_information['status'] == 'found':
+                params['timestamp'] = checks_information['new_attempts'][0]['timestamp']
 
-            lesson_title = checks_information['new_attempts'][0]['lesson_title']
-            is_negative = checks_information['new_attempts'][0]['is_negative']
-            lesson_url = checks_information['new_attempts'][0]['lesson_url']
+                lesson_title = checks_information['new_attempts'][0]['lesson_title']
+                is_negative = checks_information['new_attempts'][0]['is_negative']
+                lesson_url = checks_information['new_attempts'][0]['lesson_url']
 
-            return lesson_title, is_negative, lesson_url
+                asyncio.run(telegram_send_message(
+                    lesson_title,
+                    is_negative,
+                    lesson_url
+                ))
+        except requests.exceptions.ReadTimeout:
+            print('сервер не  ответил ')
+
+        except requests.exceptions.ConnectionError:
+            timeout_seconds = 5
+            time.sleep(timeout_seconds)
 
 
-async def telegram_send_message(bot, tg_chat_id, lesson_title, is_negative, lesson_url):
+async def telegram_send_message(lesson_title, is_negative, lesson_url):
     positive_text = f'Преподаватель проверил работу!!  \"{lesson_title}\"  {lesson_url} Преподавателю все понравилось, можно приступать к следущему уроку!'
     negative_text = f'Преподаватель проверил работу!!  \"{lesson_title}\"  {lesson_url} К сожалению, в работе нашлись ошибки.'
 
@@ -45,32 +56,10 @@ async def telegram_send_message(bot, tg_chat_id, lesson_title, is_negative, less
         )
 
 
-def main():
+if __name__ == '__main__':
     load_dotenv()
     devman_token = os.getenv('DEVMAN_TOKEN')
     tg_token = os.getenv('TG_TOKEN')
     tg_chat_id = os.getenv('TG_CHAT_ID')
     bot = telegram.Bot(tg_token)
-
-    try:
-        lesson_title, is_negative, lesson_url = long_polling(devman_token)
-        if lesson_title and is_negative and lesson_url:
-            asyncio.run(telegram_send_message(
-                bot,
-                tg_chat_id,
-                lesson_title,
-                is_negative,
-                lesson_url
-            ))
-
-
-    except requests.exceptions.ReadTimeout:
-        print('сервер не  ответил ')
-
-    except requests.exceptions.ConnectionError:
-        timeout_seconds = 5
-        time.sleep(timeout_seconds)
-
-
-if __name__ == '__main__':
-    main()
+    long_polling(devman_token)
