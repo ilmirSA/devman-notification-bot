@@ -1,9 +1,9 @@
-import asyncio
 import os
 import time
 
 import requests
 import telegram
+
 
 
 def long_polling(token):
@@ -31,11 +31,11 @@ def long_polling(token):
                 is_negative = checks_information['new_attempts'][0]['is_negative']
                 lesson_url = checks_information['new_attempts'][0]['lesson_url']
 
-                asyncio.run(telegram_send_message(
+                telegram_send_message(
                     lesson_title,
                     is_negative,
                     lesson_url
-                ))
+                )
         except requests.exceptions.ReadTimeout:
             print('сервер не  ответил ')
 
@@ -44,15 +44,14 @@ def long_polling(token):
             time.sleep(timeout_seconds)
 
 
-async def telegram_send_message(lesson_title, is_negative, lesson_url):
+def telegram_send_message(lesson_title, is_negative, lesson_url):
     positive_text = f'Преподаватель проверил работу!!  \"{lesson_title}\"  {lesson_url} Преподавателю все понравилось, можно приступать к следущему уроку!'
     negative_text = f'Преподаватель проверил работу!!  \"{lesson_title}\"  {lesson_url} К сожалению, в работе нашлись ошибки.'
 
-    async with bot:
-        await bot.send_message(
-            text=negative_text if is_negative else positive_text,
-            chat_id=tg_chat_id
-        )
+    bot.send_message(
+        text=negative_text if is_negative else positive_text,
+        chat_id=tg_chat_id
+    )
 
 
 if __name__ == '__main__':
