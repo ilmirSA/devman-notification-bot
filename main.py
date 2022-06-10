@@ -1,6 +1,6 @@
 import os
 import time
-
+import logging
 import requests
 import telegram
 
@@ -55,6 +55,7 @@ def telegram_send_message(lesson_title, is_negative, lesson_url):
 
 
 if __name__ == '__main__':
+    logging.warning('Бот запущен!')
     devman_token = os.environ['DEVMAN_TOKEN']
     tg_token = os.environ['TG_TOKEN']
     tg_chat_id = os.environ['TG_CHAT_ID']
