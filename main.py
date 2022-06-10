@@ -57,9 +57,8 @@ async def telegram_send_message(lesson_title, is_negative, lesson_url):
 
 
 if __name__ == '__main__':
-    load_dotenv()
-    devman_token = os.getenv('DEVMAN_TOKEN')
-    tg_token = os.getenv('TG_TOKEN')
-    tg_chat_id = os.getenv('TG_CHAT_ID')
+    devman_token = os.environ['DEVMAN_TOKEN']
+    tg_token = os.environ['TG_TOKEN']
+    tg_chat_id = os.environ['TG_CHAT_ID']
     bot = telegram.Bot(tg_token)
     long_polling(devman_token)
