@@ -30,7 +30,7 @@ def long_polling(token):
     }
     while True:
         try:
-            response = requests.get(url, headers=headers, timeout=95, params=params)
+            response = requests.get(url, headers=headers, timeout=5, params=params)
             response.raise_for_status()
             checks_information = response.json()
 
@@ -49,14 +49,17 @@ def long_polling(token):
                     is_negative,
                     lesson_url
                 )
-        except Exception as err:
-            logger.error("Бот Упал!")
-            logger.error(err, exc_info=True)
+        except requests.exceptions.ReadTimeout:
+            logger.error("Сервер не успел овтетить!")
 
 
         except requests.exceptions.ConnectionError:
             timeout_seconds = 5
             time.sleep(timeout_seconds)
+
+        except Exception as err:
+            logger.error("Бот Упал!")
+            logger.error(err, exc_info=True)
 
 
 def telegram_send_message(lesson_title, is_negative, lesson_url):
@@ -71,6 +74,7 @@ def telegram_send_message(lesson_title, is_negative, lesson_url):
 
 if __name__ == '__main__':
     load_dotenv()
+
     devman_token = os.environ['DEVMAN_TOKEN']
     tg_token = os.environ['TG_TOKEN']
     tg_chat_id = os.environ['TG_CHAT_ID']
@@ -78,7 +82,4 @@ if __name__ == '__main__':
     logger = logging.getLogger('Logger')
     logger.setLevel(logging.WARNING)
     logger.addHandler(TelegramLogsHandler(tg_bot, tg_chat_id))
-
-    
-
     long_polling(devman_token)
