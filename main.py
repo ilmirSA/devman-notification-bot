@@ -1,6 +1,7 @@
+import logging
 import os
 import time
-import logging
+
 import requests
 import telegram
 from dotenv import load_dotenv
@@ -30,7 +31,7 @@ def long_polling(token):
     }
     while True:
         try:
-            response = requests.get(url, headers=headers, timeout=5, params=params)
+            response = requests.get(url, headers=headers, timeout=95, params=params)
             response.raise_for_status()
             checks_information = response.json()
 
