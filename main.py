@@ -4,7 +4,7 @@ import time
 
 import requests
 import telegram
-from dotenv import load_dotenv
+
 
 
 class TelegramLogsHandler(logging.Handler):
@@ -74,7 +74,7 @@ def telegram_send_message(lesson_title, is_negative, lesson_url):
 
 
 if __name__ == '__main__':
-    load_dotenv()
+
 
     devman_token = os.environ['DEVMAN_TOKEN']
     tg_token = os.environ['TG_TOKEN']
