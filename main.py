@@ -44,7 +44,7 @@ def long_polling(token, logger, tg_bot, tg_chat_id):
                 params['timestamp'] = checks_information['timestamp_to_request']
 
             if checks_information['status'] == 'found':
-                params['timestamp'] = checks_information['new_attempts'][0]['timestamp']
+                params['timestamp'] = checks_information['last_attempt_timestamp']
 
                 lesson_title = checks_information['new_attempts'][0]['lesson_title']
                 is_negative = checks_information['new_attempts'][0]['is_negative']
